@@ -1,0 +1,13 @@
+{
+    "name": "iadicola/domain",
+    "description": "DTO-driven domain persistence layer for Laravel",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Iadicola\\Domain\\": "src/"
+        }
+    },
+    "minimum-stability": "alpha",
+    "require": {}
+}
