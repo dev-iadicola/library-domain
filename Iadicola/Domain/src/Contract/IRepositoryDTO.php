@@ -1,7 +1,7 @@
-<?php 
+<?php
 namespace Iadicola\Domain\Contract;
-    
-use App\Domain\Contract\DTO\BaseDTO;
+
+use Iadicola\Domain\DTO\BaseDTO;
 use InvalidArgumentException;
 use Iadicola\Domain\Contract\IDTO;
 use Illuminate\Database\Eloquent\Model;
@@ -18,8 +18,9 @@ use Illuminate\Database\Eloquent\Model;
  * - rely exclusively on DTOs for data mapping
  * - delegate validation and transformation to the DTO layer
  */
-interface IRepositoryDTO {
-    
+interface IRepositoryDTO
+{
+
     /**
      * Persist a new model instance using data provided by a DTO.
      *
@@ -32,7 +33,7 @@ interface IRepositoryDTO {
      */
     public function create(BaseDTO $dto): Model;
 
-     /**
+    /**
      * Update an existing model using data provided by a DTO.
      *
      * The target model is resolved using:
@@ -46,7 +47,7 @@ interface IRepositoryDTO {
      * @throws InvalidArgumentException If the DTO does not expose the identifier
      * @throws \Illuminate\Database\Eloquent\ModelNotFoundException If no model is found
      */
-    public function update( BaseDTO $dto, ?string $columId = 'id'): Model;
+    public function update(BaseDTO $dto, ?string $columId = 'id'): Model;
 
     /**
      * Create or update a model using data provided by a DTO.
@@ -62,5 +63,5 @@ interface IRepositoryDTO {
      *
      * @throws InvalidArgumentException If neither identifier nor unique keys are provided
      */
-    public function createOrUpdate( BaseDTO $dto, ?string $columId = 'id'): Model;
+    public function createOrUpdate(BaseDTO $dto, ?string $columId = 'id'): Model;
 }

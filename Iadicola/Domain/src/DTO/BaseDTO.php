@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-namespace App\Domain\Contract\DTO;
+namespace Iadicola\Domain\DTO;
 
-use Iadicola\Domain\Repositories\DTORepository;
+use Iadicola\Domain\Repository\DTORepository;
 use Iadicola\Domain\Helpers\Filters;
 use Iadicola\Domain\Contract\IDTO;
 use Iadicola\Domain\Exception\DTOException;
@@ -62,7 +62,7 @@ abstract class BaseDTO implements IDTO
      *
      * @throws DTOException
      */
-    public abstract static function fromArray(): self;
+    public abstract static function fromArray(array $data): static;
 
     /**
      * Convert the DTO into an associative array representation.
@@ -85,7 +85,7 @@ abstract class BaseDTO implements IDTO
                 continue;
             }
             $name = $prop->getName();
-            $value = $prop->getValue();
+            $value = $prop->getValue($this);
 
             $data[$name] = $value;
         }

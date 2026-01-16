@@ -2,12 +2,10 @@
 
 declare(strict_types=1);
 
-namespace Iadicola\Domain\Repositories;
+namespace Iadicola\Domain\Repository;
 
-use App\Domain\Contract\DTO\BaseDTO;
 use Illuminate\Database\Eloquent\Model;
 use Iadicola\Domain\Repository\BaseDTORepository;
-use Iadicola\Domain\Repository\StatefulDTORepository;
 
 /**
  * Generic DTO-based repository.

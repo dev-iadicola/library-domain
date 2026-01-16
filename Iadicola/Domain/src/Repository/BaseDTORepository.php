@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Iadicola\Domain\Repository;
 
-use App\Domain\Contract\DTO\BaseDTO;
+use Iadicola\Domain\DTO\BaseDTO;
 use Iadicola\Domain\Contract\IDTO;
 use Illuminate\Database\Eloquent\Model;
 use Iadicola\Domain\Exception\DTOException;

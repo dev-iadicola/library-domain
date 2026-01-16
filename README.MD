@@ -16,6 +16,18 @@ Public API may evolve
 
 Tooling (Artisan commands) is not included in the core package
 ---
+##  Tests
+
+The project is covered by unit tests based on PHPUnit.
+
+To run the full test suite, simply execute:
+
+```bash
+composer test
+```
+The command uses TestDox format with colored output to clearly display
+which classes and methods are being tested.
+--- 
 
 ## Goals
 
@@ -38,14 +50,14 @@ This library focuses **only** on **DTO-driven persistence**.
 
 ---
 
-## 🧱 Package structure
+##  Package structure
 
 
 ---
 
-## 🧩 Core concepts
+##  Core concepts
 
-### 🔹 Data Transfer Objects (DTO)
+###  Data Transfer Objects (DTO)
 
 DTOs represent **persistable data**, not Eloquent models.
 
@@ -59,7 +71,7 @@ All DTOs must implement `IDTO` and extend `BaseDTO`.
 
 ---
 
-### 🔹 DTO-driven repositories
+### DTO-driven repositories
 
 Repositories **never accept raw arrays**.
 
