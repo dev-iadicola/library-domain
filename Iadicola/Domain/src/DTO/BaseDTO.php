@@ -4,11 +4,10 @@ declare(strict_types=1);
 
 namespace Iadicola\Domain\DTO;
 
-use Iadicola\Domain\Repository\DTORepository;
+use Iadicola\Domain\Attribute\Persist;
 use Iadicola\Domain\Helpers\Filters;
 use Iadicola\Domain\Contract\IDTO;
 use Iadicola\Domain\Exception\DTOException;
-use Iadicola\Domain\Repository\StatefulDTORepository;
 use Illuminate\Database\Eloquent\Model;
 use ReflectionObject;
 
@@ -43,71 +42,97 @@ abstract class BaseDTO implements IDTO
      *
      * @param int|null $id
      */
-    public function __construct(public ?int $id)
+    public function __construct(public ?int $id = null)
     {
 
     }
 
-    /**
-     * Create a DTO instance from a plain array.
-     *
-     * This method is intentionally NOT implemented at the base level,
-     * because the BaseDTO does not know how to construct concrete DTOs.
-     *
-     * Concrete DTOs MUST implement this method if array hydration
-     * is required.
-     *
-     * @param array<string, mixed> $data
-     * @return static
-     *
-     * @throws DTOException
-     */
-    public abstract static function fromArray(array $data): static;
 
     /**
-     * Convert the DTO into an associative array representation.
+     * Convert the DTO into an array suitable for persistence.
      *
-     * The array keys correspond to the DTO property names,
-     * and the values to their current state.
+     * This method returns an associative array intended to be passed
+     * directly to Eloquent model persistence methods such as
+     * {@see \Illuminate\Database\Eloquent\Model::create()} or
+     * {@see \Illuminate\Database\Eloquent\Model::update()}.
      *
-     * Only initialized properties are included.
+     * Behavior:
+     * - Only properties explicitly annotated with {@see Persist}
+     *   are included in the resulting array.
+     * - Array keys are taken from the {@see Persist::$column} value.
+     * - Properties holding another {@see BaseDTO} instance are
+     *   automatically converted to their identifier (foreign key).
+     * - Uninitialized properties are ignored.
+        * - Properties with a null value are skipped unless explicitly
+    *   allowed via {@see Persist::$nullable}.
+
      *
-     * @return array<string, mixed>
+     * This method intentionally does NOT represent the full DTO state.
+     * For debugging, logging, or serialization purposes, use a
+     * dedicated state serialization method instead.
+     *
+     * @return array<string, mixed> An array suitable for model persistence
      */
-    public function toArray(): array
+    public function import(): array
     {
         $data = [];
+        $data['_relations'] = [];
+        $ref = new ReflectionObject($this);
 
-        $reflection = new ReflectionObject($this);
-        $props = $reflection->getProperties();
-        foreach ($props as $prop) {
+        foreach ($ref->getProperties() as $prop) {
             if (!$prop->isInitialized($this)) {
                 continue;
             }
-            $name = $prop->getName();
+
+            $attrs = $prop->getAttributes(Persist::class);
+            if ($attrs === []) {
+                continue;
+            }
+
+            /** @var Persist $persist */
+            $persist = $attrs[0]->newInstance();
+
             $value = $prop->getValue($this);
+
+            if ($value instanceof BaseDTO) {
+                // FK for DB
+                $data[$persist->column] = $value?->id();
+                // DTO completed for debug
+                $data['_relations'][$prop->getName()] = $value?->toArray();
+                continue;
+            }
+
+            if ($value === null && $persist->nullable === false) {
+                continue;
+            }
+
+            $data[$persist->column] = $value;
+        }
+
+        return $data;
+    }
+
+
+    public function toArray(): array
+    {
+        $data = [];
+        $ref = new ReflectionObject($this);
+
+        foreach ($ref->getProperties() as $prop) {
+            if (!$prop->isInitialized($this)) {
+                continue;
+            }
+            $value = $prop->getValue($this);
+            $name = $prop->getName();
+
+            if ($value instanceof BaseDTO) {
+                $value = $value->toArray();
+            }
 
             $data[$name] = $value;
         }
         return $data;
     }
-
-    /**
-     * Create a DTO instance from an Eloquent model.
-     *
-     * This method is NOT implemented at the base level because
-     * the BaseDTO does not know the concrete DTO constructor
-     * nor the required domain fields.
-     *
-     * Concrete DTOs MUST implement this method when model
-     * hydration is needed.
-     *
-     * @param Model $model
-     * @return static
-     *
-     * @throws DTOException
-     */
-    public abstract static function fromModel(Model $model): self;
 
     /**
      * Filter DTO data according to the fillable attributes
@@ -121,7 +146,7 @@ abstract class BaseDTO implements IDTO
      */
     public function FilterArrayForUpdateModel(Model $model): array
     {
-        return Filters::arrayIntersectKey($this->toArray(), $model->getFillable());
+        return Filters::arrayIntersectKey($this->import(), $model->getFillable());
     }
 
 
@@ -160,6 +185,29 @@ abstract class BaseDTO implements IDTO
     }
 
     /**
+     * Set a DTO value by property name and value.
+     *
+     *
+     * @param string $key
+     * @param string $value
+     * @return BaseDTO
+     *
+     * @throws DTOException If the property does not exist
+     */
+    public function set(string $key, mixed $value): self
+    {
+        if (!property_exists($this, $key)) {
+            throw new DTOException(
+                sprintf('Property [%s] does not exist on DTO %s', $key, static::class)
+            );
+        }
+
+        $this->$key = $value;
+
+        return $this;
+    }
+
+    /**
      * Define the unique key(s) used to resolve the model
      * when an identifier is not available.
      *
@@ -177,37 +225,5 @@ abstract class BaseDTO implements IDTO
         );
     }
 
-    /**
-     * Create a stateful repository instance bound to this DTO.
-     *
-     * This method is provided as a convenience helper to reduce
-     * repetitive instantiation of repositories in application code.
-     *
-     * It returns a {@see StatefulDTORepository} that:
-     * - is bound to the current DTO instance
-     * - wraps a DTORepository configured with the given Eloquent model
-     *
-     *  Architectural note:
-     * This method introduces a controlled dependency from the DTO
-     * to the persistence layer. While this would be avoided in a
-     * strict domain-driven design, it is considered acceptable here
-     * due to the following constraints:
-     *
-     * - this library is intended for Laravel applications only
-     * - DTOs are already tightly coupled to Eloquent models
-     * - the goal is to favor pragmatism and developer ergonomics
-     *
-     * This method SHOULD be used sparingly and primarily in
-     * application-level orchestration code.
-     *
-     * @param Model $model Eloquent model associated with the DTO entity
-     * @return StatefulDTORepository
-     */
-    public function repo(Model $model): StatefulDTORepository
-    {
-        return new StatefulDTORepository(
-            repository: new DTORepository(model: $model),
-            dto: $this
-        );
-    }
+
 }

@@ -132,7 +132,8 @@ $repository->update();
 
 ## Fast Usage 
 ```php
-$dto = UsetDTO::fromArray($request->all())->repo->create();
+use App\Model\User
+$dto = UsetDTO::fromArray($request->all())->repo(new User)->create();
 ```
 
 

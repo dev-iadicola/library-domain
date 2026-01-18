@@ -1,11 +1,8 @@
-<?php 
-namespace Iadicola\Domain\Repository;
+<?php
 
-use Iadicola\Domain\Contract\IDTO;
-use Iadicola\Domain\Contract\IStatefulDTORepository;
+namespace Iadicola\Domain\Contract;
+
 use Illuminate\Database\Eloquent\Model;
-use Iadicola\Domain\Repository\BaseDTORepository;
-use function PHPUnit\Framework\isInstanceOf;
 
 /**
  * Stateful repository wrapper for DTO-driven persistence.
@@ -37,28 +34,17 @@ use function PHPUnit\Framework\isInstanceOf;
  * It is intended to be used in application services
  * and orchestration layers, not in domain logic.
  */
-final class StatefulDTORepository implements IStatefulDTORepository
+interface IStatefulDTORepository
 {
-    /**
-     * Create a new stateful repository bound to a DTO.
-     *
-     * @param BaseDTORepository $repository Stateless repository handling persistence logic
-     * @param IDTO $dto Data Transfer Object representing the entity to persist
-     */
-    public function __construct(
-        private BaseDTORepository $repository,
-        private IDTO $dto
-    ) {}
+    
 
     /**
      * Persist a new model instance using the bound DTO.
      *
      * @return Model Newly created Eloquent model instance
      */
-    public function create(): Model
-    {
-        return $this->repository->create($this->dto);
-    }
+    public function create(): Model;
+  
 
     /**
      * Update an existing model instance using the bound DTO.
@@ -69,10 +55,8 @@ final class StatefulDTORepository implements IStatefulDTORepository
      * @param string|null $columnId Identifier column name (default: "id")
      * @return Model Updated Eloquent model instance
      */
-    public function update(?string $columnId = 'id'): Model
-    {
-        return $this->repository->update($this->dto, $columnId);
-    }
+    public function update(?string $columnId = 'id'): Model;
+    
 
     /**
      * Create or update a model instance using the bound DTO.
@@ -85,10 +69,6 @@ final class StatefulDTORepository implements IStatefulDTORepository
      * @param string|null $columnId Optional identifier column name
      * @return Model Created or updated Eloquent model instance
      */
-    public function createOrUpdate(?string $columnId = null): Model
-    {
-        return $this->repository->createOrUpdate($this->dto, $columnId);
-    }
+    public function createOrUpdate(?string $columnId = null): Model;
 
-   
 }

@@ -37,6 +37,8 @@ interface IDTO
      */
     public function toArray(): array;
 
+    public function import(): array;
+
     /**
      * Return an array of attributes allowed to be persisted
      * on the given model.
@@ -94,5 +96,7 @@ interface IDTO
      * @return mixed
      */
     public function get(string $key): mixed;
+
+    public function set(string $key, mixed $value): self;
 
 }
